@@ -13,7 +13,7 @@ import math
 
 pd.set_option('mode.chained_assignment', None)
 
-# Load the data file. Set the correct directory.
+# This code requires Data Preparation and Descriptive statistics script. Load the data file. Set the correct directory.
 
 ''' Set the correct work directory '''
 
