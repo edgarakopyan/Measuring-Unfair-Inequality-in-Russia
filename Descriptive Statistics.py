@@ -16,8 +16,9 @@ from astropy.table import Table
 
 pd.set_option('mode.chained_assignment', None)
 ###################################################################
-## Thus code contains a lot of replication, I will only explain
-## First cases
+# This code requires Data Preparation script.
+# Thus code contains a lot of replication, I will only explain
+# First cases
 
 
 ''' Set the correct work directory '''
