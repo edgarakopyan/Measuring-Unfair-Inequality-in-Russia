@@ -5,6 +5,7 @@ This is a repository of code and data a paper studying unfair inequality in Russ
 ## Running the Code
 
 The code consists of three file: (1) Data Preparation (2) Descriptive Statistics and (3) Inequality Measure Calculation. 
+It is advised to run them in that order as Descriptive Statistics uses cleaned data and Inequality Measure Calculation uses poverty threshold variable created in the Descriptive Statistics. 
 
 Directory Paths are highlighted in green in the beginning of each code (those need to be adjusted).
 
