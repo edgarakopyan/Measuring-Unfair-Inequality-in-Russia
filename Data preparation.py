@@ -28,7 +28,7 @@ samplework = workdata.copy()
 
 # And select the variables we want to work with
 samplework = samplework[['J8', 'J38', 'J59', 'I4', 'H5', 'idind', 'J217A', 'J217B', 'J216AC08', 'J216BC08', \
-                           'age','J60', 'year', 'ID_H', 'origsm']]
+                           'age','J60', 'year', 'ID_H', 'origsm', 'inwgt']]
 
 ###################################################################
 ###########  Cleaning parent occupation and education #############
