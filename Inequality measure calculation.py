@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 
 import math
 
-
 pd.set_option('mode.chained_assignment', None)
 
 # This code requires Data Preparation and Descriptive statistics script. Load the data file. Set the correct directory.
@@ -37,6 +36,7 @@ ymin = pd.Series(list(Lists.iloc[:, 2]), index = years)
 InequalityMeasure = []
 
 UnfairInequalityShare = []
+
 
 types = list((samplework.type.value_counts()).index)
 
@@ -88,16 +88,13 @@ for j in years:
     # And for equality of opportunity variable for each type
     tEOp = pd.Series()
     for t in a.type.unique():
-            tEOp[t] = (a[a.type == t].income.mean() +\
-                        (b[b.type == t].shape[0] / a[a.type == t].shape[0]) * (\
-                        YMIN - b[b.type == t].income.mean()) - tFfP * (\
-                        c[c.type == t].shape[0] / a[a.type == t].shape[0]) * (\
-                        c[c.type == t].income.mean() - YMIN) -\
-                        a.income.mean()) / (a[a.type == t].income.mean() + (\
-                        b[b.type == t].shape[0] / a[a.type == t].shape[0]) * (\
-                        YMIN - b[b.type == t].income.mean()) \
-                        - tFfP * (c[c.type == t].shape[0] / a[a.type == t].shape[0]) *\
-                        (c[c.type == t].income.mean() - YMIN) - YMIN)
+            tEOp[t] = (a[a.type == t].income.mean() + (b[b.type == t].shape[0] / a[a.type == t].shape[0]) *
+                       (YMIN - b[b.type == t].income.mean()) -
+                       tFfP * (c[c.type == t].shape[0] / a[a.type == t].shape[0]) *
+                       (c[c.type == t].income.mean() - YMIN) - a.income.mean()) / (a[a.type == t].income.mean() +
+                       (b[b.type == t].shape[0] / a[a.type == t].shape[0]) * (YMIN - b[b.type == t].income.mean()) -
+                       tFfP * (c[c.type == t].shape[0] / a[a.type == t].shape[0]) * (c[c.type == t].income.mean() -
+                                                                                    YMIN) - YMIN)
     # Now we prepare column for the second part of the equation
     a["secondpartcolumn"] = np.nan
     for i in a.index:
@@ -150,16 +147,13 @@ for i in range(0,500):
         # And for equality of opportunity variable
         tEOp = pd.Series()
         for t in a.type.unique():
-            tEOp[t] = (a[a.type == t].income.mean() + \
-                       (b[b.type == t].shape[0] / a[a.type == t].shape[0]) * ( \
-                        YMIN - b[b.type == t].income.mean()) - tFfP * ( \
-                        c[c.type == t].shape[0] / a[a.type == t].shape[0]) * ( \
-                        c[c.type == t].income.mean() - YMIN) - \
-                        a.income.mean()) / (a[a.type == t].income.mean() + ( \
-                        b[b.type == t].shape[0] / a[a.type == t].shape[0]) * ( \
-                        YMIN - b[b.type == t].income.mean()) \
-                        - tFfP * (c[c.type == t].shape[0] / a[a.type == t].shape[0]) * \
-                        (c[c.type == t].income.mean() - YMIN) - YMIN)
+            tEOp[t] = (a[a.type == t].income.mean() + (b[b.type == t].shape[0] / a[a.type == t].shape[0]) *
+                      (YMIN - b[b.type == t].income.mean()) - tFfP *
+                      (c[c.type == t].shape[0] / a[a.type == t].shape[0]) * (c[c.type == t].income.mean() - YMIN) -
+                      a.income.mean()) / (a[a.type == t].income.mean() +
+                      (b[b.type == t].shape[0] / a[a.type == t].shape[0]) * (YMIN - b[b.type == t].income.mean()) -
+                      tFfP * (c[c.type == t].shape[0] / a[a.type == t].shape[0]) * (c[c.type == t].income.mean() -
+                                                                                    YMIN) - YMIN)
         # Now we prepare column for the second part
         a["secondpartcolumn"] = np.nan
         for i in a.index:
@@ -170,12 +164,9 @@ for i in range(0,500):
         # Finally, we move on to the final part
         a["thirdpartcolumn"] = np.nan
         for i in a.index:
-            a.thirdpartcolumn[i] = (a.ytilda[i] * (tFfP + tEOp[a.type[i]] - tEOp[a.type[i]] * tFfP)) / (1 - \
-                                                                                                        a.ytilda[i] * (\
-                                                                                                        tFfP +tEOp[\
-                                                                                                        a.type[i]] -\
-                                                                                                        tEOp[a.type[\
-                                                                                                        i]] * tFfP))
+            a.thirdpartcolumn[i] = (a.ytilda[i] * (tFfP + tEOp[a.type[i]] -
+                                    tEOp[a.type[i]] * tFfP)) / (1 -a.ytilda[i] *
+                                    (tFfP +tEOp[a.type[i]] -tEOp[a.type[i]] * tFfP))
         thirdpart = (1 / N) * a[a.income > YMIN].thirdpartcolumn.sum()
         UnfairInequalityShareBoot.append((firstpart + secondpart + thirdpart) / (math.log(a.income.mean()) -\
                                             (1 / a.shape[0]) * (a.income.transform(math.log)).sum()))
