@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 import math
 
+
 pd.set_option('mode.chained_assignment', None)
 
 # This code requires Data Preparation and Descriptive statistics script. Load the data file. Set the correct directory.
@@ -27,16 +28,15 @@ Watts = list(Lists.iloc[:, 0])
 
 PovertyGap = list(Lists.iloc[:, 1])
 
+years = list(samplework.year.unique())
+
+ymin = pd.Series(list(Lists.iloc[:, 2]), index = years)
 
 # Set variables for getting all inequality measures
-
-years = list(samplework.year.unique())
 
 InequalityMeasure = []
 
 UnfairInequalityShare = []
-
-ymin = 0
 
 types = list((samplework.type.value_counts()).index)
 
@@ -55,9 +55,7 @@ for j in years:
         if (a[a.type == i].shape[0] < 20) == True:
             nonusedtypes.append(i)
     a = a[~a.type.isin(nonusedtypes)]
-    ymin = a.income.median() * 0.6
     MLD.append(np.log(a.income.mean()) - (1 / a.shape[0]) * (np.log(a.income)).sum())
-
 
 ###################################################################
 ########### Inequality Measure with Confidence Intervals ##########
@@ -74,32 +72,32 @@ for j in years:
         if (a[a.type == i].shape[0] < 20) == True:
             nonusedtypes.append(i)
     a = a[~a.type.isin(nonusedtypes)]
-    ymin = a.income.median() * 0.6
+    YMIN = ymin[j]
     N = a.shape[0]
     # I break up the estimation into three parts, based on the three summations
     # in the original equation. First part of unfair inequality estimation
-    b = a[a.income <= ymin]  # the poor
-    c = a[a.income > ymin]  # the rich
-    firstpart = (1 / a.shape[0]) * (b.shape[0]) * math.log(ymin) - (1 / a.shape[0]) * \
+    b = a[a.income <= YMIN]  # the poor
+    c = a[a.income > YMIN]  # the rich
+    firstpart = (1 / a.shape[0]) * (b.shape[0]) * math.log(YMIN) - (1 / a.shape[0]) * \
                 (b.income.transform(math.log)).sum() - \
-                b.shape[0] / a.shape[0] + (1 / a.shape[0]) * (b.income / ymin).sum()
+                b.shape[0] / a.shape[0] + (1 / a.shape[0]) * (b.income / YMIN).sum()
     # Now we calculate the second part
-    a['ytilda'] = 1 - ymin / a.income
+    a['ytilda'] = 1 - YMIN / a.income
     # We create the variable for the Freedom from Poverty variable
-    tFfP = (b.shape[0] * (ymin - b.income.mean())) / (c.shape[0] * (c.income.mean() - ymin))
+    tFfP = (b.shape[0] * (YMIN - b.income.mean())) / (c.shape[0] * (c.income.mean() - YMIN))
     # And for equality of opportunity variable for each type
     tEOp = pd.Series()
     for t in a.type.unique():
             tEOp[t] = (a[a.type == t].income.mean() +\
                         (b[b.type == t].shape[0] / a[a.type == t].shape[0]) * (\
-                        ymin - b[b.type == t].income.mean()) - tFfP * (\
+                        YMIN - b[b.type == t].income.mean()) - tFfP * (\
                         c[c.type == t].shape[0] / a[a.type == t].shape[0]) * (\
-                        c[c.type == t].income.mean() - ymin) -\
+                        c[c.type == t].income.mean() - YMIN) -\
                         a.income.mean()) / (a[a.type == t].income.mean() + (\
                         b[b.type == t].shape[0] / a[a.type == t].shape[0]) * (\
-                        ymin - b[b.type == t].income.mean()) \
+                        YMIN - b[b.type == t].income.mean()) \
                         - tFfP * (c[c.type == t].shape[0] / a[a.type == t].shape[0]) *\
-                        (c[c.type == t].income.mean() - ymin) - ymin)
+                        (c[c.type == t].income.mean() - YMIN) - YMIN)
     # Now we prepare column for the second part of the equation
     a["secondpartcolumn"] = np.nan
     for i in a.index:
@@ -108,17 +106,16 @@ for j in years:
     # This is because in the original equation we should sum over rich people only (who will have positive values in
     # the second part column) but the command constructs a column over all people both rich and poor.
     # And calculate the second part of inequality formula
-    secondpart = (1 / N) * a[a.income > ymin].secondpartcolumn.sum()
+    secondpart = (1 / N) * a[a.income > YMIN].secondpartcolumn.sum()
     # Finally, we move on to the final part
     a["thirdpartcolumn"] = np.nan
     for i in a.index:
         a.thirdpartcolumn[i] = (a.ytilda[i] * (tFfP + tEOp[a.type[i]] - tEOp[a.type[i]] * tFfP)) / (1 - \
-        a.ytilda[i] * (tFfP + tEOp[a.type[i]] -tEOp[a.type[i]] * tFfP))
-    thirdpart = (1 / N) * a[a.income > ymin].thirdpartcolumn.sum()
+        a.ytilda[i] * (tFfP + tEOp[a.type[i]] - tEOp[a.type[i]] * tFfP))
+    thirdpart = (1 / N) * a[a.income > YMIN].thirdpartcolumn.sum()
     InequalityMeasure.append(firstpart + secondpart + thirdpart)
     UnfairInequalityShare.append((firstpart + secondpart + thirdpart) / (math.log(a.income.mean()) - (1 / a.shape[0]) *\
                                                                          (a.income.transform(math.log)).sum()))
-
 
 
 ##### Now let's get the 95% confidence intervals ######
@@ -130,46 +127,46 @@ for i in range(0,500):
     UnfairInequalityShareBoot = []
     for j in years:
         a = bootstrapeddata[(bootstrapeddata.year == j) & (bootstrapeddata.origsm == 1)]
-        a = a[(a.income > a.income.quantile(0.01)) & (a.income < a.income.quantile(0.995))]
+        a = a[(a.income > a.income.quantile(0.01)) & (a.income < a.income.quantile(0.9995))]
         # Find groups with fewer than 20 people and remove them
         nonusedtypes = []
         for i in types:
             if (a[a.type == i].shape[0] < 20) == True:
                 nonusedtypes.append(i)
         a = a[~a.type.isin(nonusedtypes)]
-        ymin = a.income.median() * 0.6
+        YMIN = ymin[j]
         a = a.reset_index(drop=True)
         N = a.shape[0]
         # First part of unfair inequality estimation
-        b = a[a.income <= ymin]  # the poor
-        c = a[a.income > ymin]  # the rich
-        firstpart = (1 / a.shape[0]) * (b.shape[0]) * math.log(ymin) - (1 / a.shape[0]) * \
+        b = a[a.income <= YMIN]  # the poor
+        c = a[a.income > YMIN]  # the rich
+        firstpart = (1 / a.shape[0]) * (b.shape[0]) * math.log(YMIN) - (1 / a.shape[0]) * \
                     (b.income.transform(math.log)).sum() - \
-                    b.shape[0] / a.shape[0] + (1 / a.shape[0]) * (b.income / ymin).sum()
+                    b.shape[0] / a.shape[0] + (1 / a.shape[0]) * (b.income / YMIN).sum()
         # Now we calculate the second part
-        a['ytilda'] = 1 - ymin / a.income
+        a['ytilda'] = 1 - YMIN / a.income
         # We create the variable for the Freedom from Poverty variable
-        tFfP = (b.shape[0] * (ymin - b.income.mean())) / (c.shape[0] * (c.income.mean() - ymin))
+        tFfP = (b.shape[0] * (YMIN - b.income.mean())) / (c.shape[0] * (c.income.mean() - YMIN))
         # And for equality of opportunity variable
         tEOp = pd.Series()
         for t in a.type.unique():
             tEOp[t] = (a[a.type == t].income.mean() + \
                        (b[b.type == t].shape[0] / a[a.type == t].shape[0]) * ( \
-                        ymin - b[b.type == t].income.mean()) - tFfP * ( \
+                        YMIN - b[b.type == t].income.mean()) - tFfP * ( \
                         c[c.type == t].shape[0] / a[a.type == t].shape[0]) * ( \
-                        c[c.type == t].income.mean() - ymin) - \
+                        c[c.type == t].income.mean() - YMIN) - \
                         a.income.mean()) / (a[a.type == t].income.mean() + ( \
                         b[b.type == t].shape[0] / a[a.type == t].shape[0]) * ( \
-                        ymin - b[b.type == t].income.mean()) \
+                        YMIN - b[b.type == t].income.mean()) \
                         - tFfP * (c[c.type == t].shape[0] / a[a.type == t].shape[0]) * \
-                        (c[c.type == t].income.mean() - ymin) - ymin)
+                        (c[c.type == t].income.mean() - YMIN) - YMIN)
         # Now we prepare column for the second part
         a["secondpartcolumn"] = np.nan
         for i in a.index:
             a.secondpartcolumn[i] = 1 - a.ytilda[i] * (tFfP + tEOp[a.type[i]] - tEOp[a.type[i]] * tFfP)
         a.secondpartcolumn = np.log(a.secondpartcolumn)
         # And calculate the second part of inequality formula
-        secondpart = (1 / N) * a[a.income > ymin].secondpartcolumn.sum()
+        secondpart = (1 / N) * a[a.income > YMIN].secondpartcolumn.sum()
         # Finally, we move on to the final part
         a["thirdpartcolumn"] = np.nan
         for i in a.index:
@@ -179,7 +176,7 @@ for i in range(0,500):
                                                                                                         a.type[i]] -\
                                                                                                         tEOp[a.type[\
                                                                                                         i]] * tFfP))
-        thirdpart = (1 / N) * a[a.income > ymin].thirdpartcolumn.sum()
+        thirdpart = (1 / N) * a[a.income > YMIN].thirdpartcolumn.sum()
         UnfairInequalityShareBoot.append((firstpart + secondpart + thirdpart) / (math.log(a.income.mean()) -\
                                             (1 / a.shape[0]) * (a.income.transform(math.log)).sum()))
     UnfairInequalityShareBoot = pd.Series(UnfairInequalityShareBoot)
@@ -221,7 +218,7 @@ ax2.plot(years, MLD, color="Green")
 
 ax2.tick_params(axis='y', labelcolor='Green')
 
-plt.savefig("Unfair")
+plt.savefig("Unfair Inequality")
 
 plt.clf()
 
@@ -260,30 +257,30 @@ for j in years:
         if (a[a.type == i].shape[0] < 20) == True:
             nonusedtypes.append(i)
     a = a[~a.type.isin(nonusedtypes)]
-    ymin = a.income.median() * 0.6
+    YMIN = ymin[j]
     a = a.reset_index(drop=True)
     N = a.shape[0]
     # First part of the estimation
-    b = a[a.income <= ymin]  # the poor
-    c = a[a.income > ymin]  # the rich
-    partone = (1 / a.shape[0]) * (b.shape[0]) * math.log(ymin) - (1 / a.shape[0]) * \
+    b = a[a.income <= YMIN]  # the poor
+    c = a[a.income > YMIN]  # the rich
+    partone = (1 / a.shape[0]) * (b.shape[0]) * math.log(YMIN) - (1 / a.shape[0]) * \
                 (b.income.transform(math.log)).sum() - \
-                b.shape[0] / a.shape[0] + (1 / a.shape[0]) * (b.income / ymin).sum()
+                b.shape[0] / a.shape[0] + (1 / a.shape[0]) * (b.income / YMIN).sum()
     # Second part of the estimation
-    a['ytilda'] = 1 - ymin / a.income
+    a['ytilda'] = 1 - YMIN / a.income
     # We create the variable for the Freedom from Poverty variable
-    tFfP = (b.shape[0] * (ymin - b.income.mean())) / (c.shape[0] * (c.income.mean() - ymin))
+    tFfP = (b.shape[0] * (YMIN - b.income.mean())) / (c.shape[0] * (c.income.mean() - YMIN))
     a["parttwo"] = np.nan
     for i in a.index:
         a.parttwo[i] = 1 - a.ytilda[i] * tFfP
     a.parttwo = np.log(a.parttwo)
     # And calculate the second part of inequality formula
-    parttwo = (1 / N) * a[a.income > ymin].parttwo.sum()
+    parttwo = (1 / N) * a[a.income > YMIN].parttwo.sum()
     # Third part of the estimation
     a["partthree"] = np.nan
     for i in a.index:
         a.partthree[i] = (a.ytilda[i] * tFfP) / (1 - a.ytilda[i] * tFfP)
-    partthree = (1 / N) * a[a.income > ymin].partthree.sum()
+    partthree = (1 / N) * a[a.income > YMIN].partthree.sum()
     # And finally we get the overall measure
     FfP.append(partone + parttwo + partthree)
 
@@ -340,5 +337,4 @@ plt.clf()
 os.remove("Intermediarylists")
 
 os.remove("Intermediarywork")
-
 
